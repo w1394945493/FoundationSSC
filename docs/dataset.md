@@ -51,6 +51,12 @@ The data is organized in the following format:
           |       |-- 21/     
 ```
 
+Note: The `lidarseg` directory contains the point-wise LiDAR semantic labels from SemanticKITTI. 
+They can be downloaded from [SemanticKITTI label data](https://semantic-kitti.org/assets/data_odometry_labels.zip).
+
+
+
+
 ## SSCBench-KITTI-360
 
 Download the dataset from [SSCBench-KITTI-360](https://github.com/ai4ce/SSCBench).
