@@ -9,3 +9,7 @@ __pycache__/
 *.so
 *.egg
 .vscode/
+
+# DFA3D local build artifacts
+/packages/DFA3D/.eggs/
+/packages/DFA3D/build/
