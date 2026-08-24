@@ -13,3 +13,6 @@ __pycache__/
 # DFA3D local build artifacts
 /packages/DFA3D/.eggs/
 /packages/DFA3D/build/
+
+# bev_pool
+/packages/bev_pool/build/

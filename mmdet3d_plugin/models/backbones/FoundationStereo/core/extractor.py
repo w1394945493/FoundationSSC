@@ -367,7 +367,8 @@ class Feature(nn.Module):
             "edgenext_small",
             pretrained=False,
             features_only=False,
-            checkpoint_path="ckpts/edgenext_small/model.safetensors",
+            # checkpoint_path="ckpts/edgenext_small/model.safetensors",
+            checkpoint_path="/c20250502/wangyushen/Weights/foundationssc/model.safetensors", #
         )
         self.stem = model.stem
         self.stages = model.stages

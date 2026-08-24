@@ -53,8 +53,16 @@ find -L "$SEM_DATA/lidarseg" \
 # 二. SSCBench-Kitti-360
 
 #--------------------------------------------------#
+cd /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/packages/DFA3D
+python3 setup.py build_ext --inplace
+cd /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/packages/bev_pool
+python3 setup.py build_ext --inplace
+# 修改/vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/mmdet3d_plugin/models/backbones/FoundationStereo/core/extractor.py预训练权重路径
+
+#--------------------------------------------------#
 # 评估
-CUDA_VISIBLE_DEVICES=0
+CUDA_VISIBLE_DEVICES=0 \
+PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
 python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --eval \
       --ckpt_path /c20250502/wangyushen/Weights/foundationssc/FoundationSSC-KITTI360.ckpt \
