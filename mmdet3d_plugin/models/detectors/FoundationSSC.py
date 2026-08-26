@@ -60,50 +60,67 @@ class FoundationSSC(BaseModule):
         self.pts_bbox_head = builder.build_head(pts_bbox_head)
         if plugin_head is not None:
             self.plugin_head = builder.build_head(plugin_head)
-        
+
         self.depth_loss = depth_loss
         self.use_semantic = use_semantic
 
-    #* 8 基础特征编码：运行 FoundationStereo，并通过 neck 整理图像特征
+    # 8 基础特征编码：运行 FoundationStereo，并通过 neck 整理图像特征
     def foundation_encoder(self, img, raw_imgs):
-        B, N, C, imH, imW = img.shape   # (1 1 3 384 1408)
+        # img 是经过归一化后仅保留左相机的输入，形状为 (B, N, C, H, W)；
+        # 当前函数主要使用它确定 batch 大小 B 和左相机数量 N。
+        B, N, C, imH, imW = img.shape  # 例如 (1, 1, 3, 384, 1408)
 
-        # foundationstereo backbone
+        # raw_imgs 按“左图、右图”交替存放，单张图当前为 (B, H, W, C)。
+        # 偶数位置取左图，并将通道移到前面，转换为网络需要的 (B, C, H, W)。
         raw_left_imgs = [
             raw_img.permute(0, 3, 1, 2)
             for i, raw_img in enumerate(raw_imgs)
             if i % 2 == 0
         ]
+        # 奇数位置取右图，并同样转换成 (B, C, H, W)。
         raw_right_imgs = [
             raw_img.permute(0, 3, 1, 2)
             for i, raw_img in enumerate(raw_imgs)
             if i % 2 == 1
         ]
 
+        # 将列表中的左右相机图像分别合并到 batch 维，形成成对的立体输入。
         raw_left_imgs = torch.cat(raw_left_imgs, dim=0)
         raw_right_imgs = torch.cat(raw_right_imgs, dim=0)
 
+        # 记录需要保留的左相机数量，后面从左右图联合特征中截取左图部分。
         N = img.size(1)
 
+        # FoundationStereo 在此处仅用于推理，因此关闭梯度以减少显存和计算开销。
         with torch.no_grad():
+            # FoundationStereo 同时完成两项工作：
+            # 1. 根据左右图特征匹配，输出视差概率体和最终视差图 disp_volume；
+            # 2. 对左右图提取多层 DINOv2 特征 dinov2_feat。
             disp_volume, dinov2_feat = self.img_backbone(
                 raw_left_imgs, raw_right_imgs, test_mode=True, iters=self.gru_iters
             )
 
-        # dionv2_feat is stereo feature, we only use left image feature
+        # 左右图此前沿 batch 维一起送入 backbone；这里只截取前 N 个左图特征。
+        # 每层特征由空间特征 feat 和全局分类标记 cls_token 组成。
         x = [(feat[:N, ...], cls_token[:N, ...]) for feat, cls_token in dinov2_feat]
 
+        # SimpleFPN 将 DINOv2 特征构造成多尺度特征金字塔。
         x = self.img_pre_neck(x)
+        # SECONDFPN 将不同尺度调整到相同空间分辨率并融合通道。
         x = self.img_neck(x)
         if type(x) in [list, tuple]:
+            # 当前后续深度网络只使用融合后的第一组图像特征。
             x = x[0]
 
+        # neck 输出暂时把相机维合并在 batch 维中，这里恢复为 (B, N, C, H, W)。
         _, output_dim, ouput_H, output_W = x.shape
         x = x.view(B, N, output_dim, ouput_H, output_W)
 
+        # x 是供深度网络使用的左图编码特征；disp_volume 提供立体几何视差信息。
+        # disp_volume 的作用是把“左右图的像素偏移”转换成真实深度信息，告诉后续网络：左图中每个像素大概位于三维空间中的哪个距离，以及这个距离有多确定。
         return x, disp_volume
 
-    #* 7 图像特征提取：生成立体、深度、视角变换及 VoxFormer 体素特征
+    # 7 图像特征提取：生成立体、深度、视角变换及 VoxFormer 体素特征
     def extract_img_feat(self, img_inputs, img_metas):
         left_img_inputs = [
             img_inputs[0][:, ::2],  # (1 1 3 384 1408)
@@ -117,9 +134,14 @@ class FoundationSSC(BaseModule):
             # img_inputs[8][:, ::2], img_inputs[9][:, ::2]
         ]
 
+        # 使用左右原始图执行 FoundationStereo：返回左图语义特征和立体视差结果。
+        # left_img_inputs[0] 形状为 (B, N, C, H, W)，例如 (1, 1, 3, 384, 1408)；
+        # img_metas["raw_img"] 同时包含配对的左、右原始 RGB 图像。
         img_enc_feats, disp_volume = self.foundation_encoder(
-            left_img_inputs[0], img_metas["raw_img"]    # (1 1 3 384 1408)
-        )   
+            left_img_inputs[0], img_metas["raw_img"]
+        )
+
+        # img_enc_feats 供深度网络提取上下文；disp_volume 提供视差概率和视差图。
         mlp_input = self.depth_net.get_mlp_input(*left_img_inputs[1:7])
         context, depth, stereo_depth = self.depth_net(
             [img_enc_feats] + left_img_inputs[1:7] + [mlp_input], img_metas, disp_volume
@@ -145,7 +167,7 @@ class FoundationSSC(BaseModule):
             context = context.view(b * n, d, h, w)
         return x, context, depth
 
-    #* 10 占用特征编码：使用 3D backbone 和 neck 进一步编码体素特征
+    # 10 占用特征编码：使用 3D backbone 和 neck 进一步编码体素特征
     def occ_encoder(self, x):
         x = self.occ_encoder_backbone(x)
         x = self.occ_encoder_neck(x)
@@ -161,7 +183,7 @@ class FoundationSSC(BaseModule):
 
         img_voxel_feats, context, depth = self.extract_img_feat(img_inputs, img_metas)
         voxel_feats_enc = self.occ_encoder(img_voxel_feats)
-        
+
         if hasattr(self, "plugin_head"):
             segmentation = self.plugin_head(context)
 
@@ -205,7 +227,7 @@ class FoundationSSC(BaseModule):
 
         return train_output
 
-    #* 6 测试前向：提取图像体素特征，完成占用编码并生成预测结果
+    # 6 测试前向：提取图像体素特征，完成占用编码并生成预测结果
     def forward_test(self, data_dict):
         img_inputs = data_dict["img_inputs"] # 8:(1 2 3 384 1408) (1 2 3 3) (1 2 3) (1 2 4 4) (1 2 3 3) (1 2 3) (1 4 4) (1 2 4 4)
         img_metas = data_dict["img_metas"]
@@ -220,7 +242,7 @@ class FoundationSSC(BaseModule):
         if type(voxel_feats_enc) is not list:
             voxel_feats_enc = [voxel_feats_enc]
 
-        #* 11 占用预测头：将编码后的体素特征转换为各体素的类别分数
+        # 11 占用预测头：将编码后的体素特征转换为各体素的类别分数
         output = self.pts_bbox_head(
             voxel_feats=voxel_feats_enc,
             img_metas=img_metas,
@@ -235,7 +257,7 @@ class FoundationSSC(BaseModule):
 
         return test_output
 
-    #* 5 FoundationSSC 总入口：根据模型状态选择训练前向或测试前向
+    # 5 FoundationSSC 总入口：根据模型状态选择训练前向或测试前向
     def forward(self, data_dict):
         if self.training:
             return self.forward_train(data_dict)
