@@ -27,6 +27,7 @@ class pl_model(LightningBaseModel):
         self.save_path = config["save_path"]
         self.test_mapping = config["test_mapping"]
 
+    #* 4 Lightning 模型前向：将当前批次交给内部 FoundationSSC 模型
     def forward(self, data_dict):
         return self.model(data_dict)
 
@@ -123,6 +124,7 @@ class pl_model(LightningBaseModel):
 
         self.val_metrics.reset()
 
+    #* 3 单批测试入口：执行模型推理，并保存预测结果或累计测试指标
     def test_step(self, batch, batch_idx):
         output_dict = self.forward(batch)
 
@@ -149,6 +151,7 @@ class pl_model(LightningBaseModel):
         if gt_occ is not None:
             self.test_metrics.add_batch(pred, gt_occ)
 
+    #* 12 测试收尾：汇总全部批次的指标，打印各类别 IoU 并记录日志
     def on_test_epoch_end(self):
         stats = self.test_metrics.get_stats()
         dev = self.device

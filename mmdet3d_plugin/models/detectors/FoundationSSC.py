@@ -64,6 +64,7 @@ class FoundationSSC(BaseModule):
         self.depth_loss = depth_loss
         self.use_semantic = use_semantic
 
+    #* 8 基础特征编码：运行 FoundationStereo，并通过 neck 整理图像特征
     def foundation_encoder(self, img, raw_imgs):
         B, N, C, imH, imW = img.shape
 
@@ -102,6 +103,7 @@ class FoundationSSC(BaseModule):
 
         return x, disp_volume
 
+    #* 7 图像特征提取：生成立体、深度、视角变换及 VoxFormer 体素特征
     def extract_img_feat(self, img_inputs, img_metas):
         left_img_inputs = [
             img_inputs[0][:, ::2],
@@ -143,6 +145,7 @@ class FoundationSSC(BaseModule):
             context = context.view(b * n, d, h, w)
         return x, context, depth
 
+    #* 10 占用特征编码：使用 3D backbone 和 neck 进一步编码体素特征
     def occ_encoder(self, x):
         x = self.occ_encoder_backbone(x)
         x = self.occ_encoder_neck(x)
@@ -202,6 +205,7 @@ class FoundationSSC(BaseModule):
 
         return train_output
 
+    #* 6 测试前向：提取图像体素特征，完成占用编码并生成预测结果
     def forward_test(self, data_dict):
         img_inputs = data_dict["img_inputs"]
         img_metas = data_dict["img_metas"]
@@ -216,6 +220,7 @@ class FoundationSSC(BaseModule):
         if type(voxel_feats_enc) is not list:
             voxel_feats_enc = [voxel_feats_enc]
 
+        #* 11 占用预测头：将编码后的体素特征转换为各体素的类别分数
         output = self.pts_bbox_head(
             voxel_feats=voxel_feats_enc,
             img_metas=img_metas,
@@ -230,6 +235,7 @@ class FoundationSSC(BaseModule):
 
         return test_output
 
+    #* 5 FoundationSSC 总入口：根据模型状态选择训练前向或测试前向
     def forward(self, data_dict):
         if self.training:
             return self.forward_train(data_dict)

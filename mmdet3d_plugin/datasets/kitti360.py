@@ -150,19 +150,34 @@ class KITTI360Dataset(Dataset):
         return input_dict
 
     def load_annotations(self, ann_file=None):
+        """扫描当前数据划分中的文件，生成每一帧样本的元信息列表。
+
+        注意：参数 ``ann_file`` 当前没有在函数内部使用，实际标签根目录取自
+        ``self.ann_file``。本函数只收集路径和标定信息；除检查占用标签是否存在
+        外，不会在这里真正读取图像、点云或占用标签内容。
+        """
+        # 保存全部样本的元信息；列表中的每个字典对应一个帧。
         scans = []
+
+        # self.sequences 由 train/val/test 划分决定，逐个扫描当前划分包含的序列。
         for sequence in self.sequences:
+            # KITTI-360 在这里使用固定标定参数：P2/P3 是左右相机投影矩阵，
+            # Tr 将激光雷达坐标转换到相机坐标。
             calib = self.read_calib()
             P2 = calib["P2"]
             P3 = calib["P3"]
             T_velo_2_cam = calib["Tr"]
+
+            # 组合得到从激光雷达坐标直接投影到左右图像平面的矩阵。
             proj_matrix_2 = P2 @ T_velo_2_cam
             proj_matrix_3 = P3 @ T_velo_2_cam
 
+            # 占用标签目录和当前序列的原始图像目录。
             voxel_base_path = os.path.join(self.ann_file, sequence)
             img_base_path = os.path.join(self.data_root, "data_2d_raw", sequence)
 
             if self.load_continuous:
+                # 连续帧模式：直接以左相机目录下的所有 PNG 图像作为样本索引。
                 id_base_path = os.path.join(
                     self.data_root,
                     "data_2d_raw",
@@ -172,13 +187,18 @@ class KITTI360Dataset(Dataset):
                     "*.png",
                 )
             else:
+                # 默认模式：以 voxels 目录下已有的 .bin 文件确定需要评估的帧。
                 id_base_path = os.path.join(
                     self.data_root, "data_2d_raw", sequence, "voxels", "*.bin"
                 )
 
+            # 展开通配符并排序，保证每次构建数据集时样本顺序稳定。
             all_id_base_path = sorted(glob.glob(id_base_path))
             for id_path in all_id_base_path:
+                # 从文件名中取得不带扩展名的帧编号，例如 0000001234。
                 img_id = id_path.split("/")[-1].split(".")[0]
+
+                # 根据帧编号拼出左右相机图像和占用标签的完整路径。
                 img_2_path = os.path.join(
                     img_base_path, "image_00", "data_rect", img_id + ".png"
                 )
@@ -187,9 +207,13 @@ class KITTI360Dataset(Dataset):
                 )
                 voxel_path = os.path.join(voxel_base_path, img_id + "_1_1.npy")
 
+                # 测试集可能没有真实占用标签。用 None 标记后，后续 pipeline
+                # 会在测试阶段生成占位标签，而不是在这里读取不存在的文件。
                 if not os.path.exists(voxel_path):
                     voxel_path = None
 
+                # 汇总该帧后续数据 pipeline 所需的路径、序列信息和标定矩阵。
+                # 图像及标签内容会在 __getitem__ 被调用时才真正加载。
                 scans.append(
                     {
                         "img_2_path": img_2_path,
@@ -205,6 +229,7 @@ class KITTI360Dataset(Dataset):
                     }
                 )
 
+        # 返回当前数据划分的完整样本索引，赋给 self.data_infos。
         return scans
 
     def get_ann_info(self, index, key="voxel_path"):

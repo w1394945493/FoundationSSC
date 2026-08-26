@@ -59,6 +59,12 @@ cd /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/packages/bev_pool
 python3 setup.py build_ext --inplace
 # 修改/vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/mmdet3d_plugin/models/backbones/FoundationStereo/core/extractor.py预训练权重路径
 
+# 创建数据集元数据文件pkl
+python tools/create_kitti360_infos.py \
+  --data-root /c20250502/wangyushen/Datasets/kitti/sscbenchkitti360/sscbench-kitti \
+  --ann-file /c20250502/wangyushen/Datasets/kitti/sscbenchkitti360/sscbench-kitti/preprocess/labels \
+  --output-dir /c20250502/wangyushen/Datasets/kitti/metadata/foundationssc/kitti360
+
 #--------------------------------------------------#
 # 评估
 CUDA_VISIBLE_DEVICES=0 \

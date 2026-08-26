@@ -333,6 +333,7 @@ class FoundationStereo(nn.Module):
 
         return up_disp.float()
 
+    #* 9 FoundationStereo 前向：从左右图像估计视差并提取 DINOv2 特征
     def forward(
         self,
         image1,

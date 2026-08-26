@@ -15,6 +15,7 @@ class DataModule(pl.LightningDataModule):
         self.val_dataloader_config = config.test_dataloader_config
         self.config = config
 
+    #* 1 测试准备：根据配置构建训练、测试和验证数据集
     def setup(self, stage=None):
         self.train_dataset = build_dataset(self.trainset_config)
         self.test_dataset = build_dataset(self.testset_config)
@@ -40,6 +41,7 @@ class DataModule(pl.LightningDataModule):
             pin_memory=True,
         )
 
+    #* 2 测试数据加载：为测试集创建 DataLoader，供 Trainer 逐批读取
     def test_dataloader(self):
         return DataLoader(
             self.test_dataset,
