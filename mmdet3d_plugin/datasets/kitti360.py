@@ -1,5 +1,7 @@
 import os
 import glob
+#* 读取预先生成的样本元信息 pkl，避免每次初始化都逐帧扫描目录。
+import pickle
 import numpy as np
 from mmdet.datasets import DATASETS
 from torch.utils.data import Dataset
@@ -17,6 +19,8 @@ class KITTI360Dataset(Dataset):
         camera_used,
         occ_size,
         pc_range,
+        #* 可选的预处理元信息文件；未提供或文件不存在时回退到逐帧扫描。
+        info_file=None,
         test_mode=False,
         load_continuous=False,
     ):
@@ -42,7 +46,20 @@ class KITTI360Dataset(Dataset):
         self.data_root = data_root
         self.ann_file = ann_file
         self.test_mode = test_mode
-        self.data_infos = self.load_annotations(self.ann_file)
+
+        #* 优先读取预处理好的 pkl，从而跳过 glob 和逐帧标签存在性检查。
+        if info_file is not None and os.path.isfile(info_file):
+            #* pkl 内容是 create_kitti360_infos.py 生成的逐帧元信息列表。
+            with open(info_file, "rb") as f:
+                self.data_infos = pickle.load(f)
+            #* 输出实际使用的索引文件和样本数，便于确认缓存已经生效。
+            print(f"Loaded {len(self.data_infos)} KITTI-360 infos from {info_file}")
+        else:
+            #* 没有配置 pkl 或指定文件不存在时，保留原有的逐帧扫描逻辑。
+            if info_file is not None:
+                #* 显式提示回退原因，避免路径写错后误以为正在使用 pkl。
+                print(f"KITTI-360 info file not found: {info_file}; scanning ann_file")
+            self.data_infos = self.load_annotations(self.ann_file)
 
         self.occ_size = occ_size
         self.pc_range = pc_range
