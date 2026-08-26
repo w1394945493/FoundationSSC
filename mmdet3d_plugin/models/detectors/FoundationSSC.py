@@ -66,7 +66,7 @@ class FoundationSSC(BaseModule):
 
     #* 8 基础特征编码：运行 FoundationStereo，并通过 neck 整理图像特征
     def foundation_encoder(self, img, raw_imgs):
-        B, N, C, imH, imW = img.shape
+        B, N, C, imH, imW = img.shape   # (1 1 3 384 1408)
 
         # foundationstereo backbone
         raw_left_imgs = [
@@ -106,8 +106,8 @@ class FoundationSSC(BaseModule):
     #* 7 图像特征提取：生成立体、深度、视角变换及 VoxFormer 体素特征
     def extract_img_feat(self, img_inputs, img_metas):
         left_img_inputs = [
-            img_inputs[0][:, ::2],
-            img_inputs[1][:, ::2],
+            img_inputs[0][:, ::2],  # (1 1 3 384 1408)
+            img_inputs[1][:, ::2],  # (1 1 3 3)
             img_inputs[2][:, ::2],
             img_inputs[3][:, ::2],
             img_inputs[4][:, ::2],
@@ -118,8 +118,8 @@ class FoundationSSC(BaseModule):
         ]
 
         img_enc_feats, disp_volume = self.foundation_encoder(
-            left_img_inputs[0], img_metas["raw_img"]
-        )
+            left_img_inputs[0], img_metas["raw_img"]    # (1 1 3 384 1408)
+        )   
         mlp_input = self.depth_net.get_mlp_input(*left_img_inputs[1:7])
         context, depth, stereo_depth = self.depth_net(
             [img_enc_feats] + left_img_inputs[1:7] + [mlp_input], img_metas, disp_volume
@@ -207,9 +207,9 @@ class FoundationSSC(BaseModule):
 
     #* 6 测试前向：提取图像体素特征，完成占用编码并生成预测结果
     def forward_test(self, data_dict):
-        img_inputs = data_dict["img_inputs"]
+        img_inputs = data_dict["img_inputs"] # 8:(1 2 3 384 1408) (1 2 3 3) (1 2 3) (1 2 4 4) (1 2 3 3) (1 2 3) (1 4 4) (1 2 4 4)
         img_metas = data_dict["img_metas"]
-        gt_occ = data_dict["gt_occ"]
+        gt_occ = data_dict["gt_occ"]    # (1 256 256 32)
 
         img_voxel_feats, context, depth = self.extract_img_feat(img_inputs, img_metas)
         voxel_feats_enc = self.occ_encoder(img_voxel_feats)

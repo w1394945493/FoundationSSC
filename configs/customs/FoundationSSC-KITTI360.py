@@ -2,9 +2,9 @@
 data_root = "/c20250502/wangyushen/Datasets/kitti/sscbenchkitti360/sscbench-kitti"
 ann_file = "/c20250502/wangyushen/Datasets/kitti/sscbenchkitti360/sscbench-kitti/preprocess/labels"
 
-#* 三个数据划分的预处理元信息统一存放在 metadata 目录中。
-metadata_root = "/c20250502/wangyushen/Datasets/kitti/metadata"
-#* 分别指定训练、验证和测试集的 pkl 文件；文件缺失时 Dataset 会回退到逐帧扫描。
+# * 三个数据划分的预处理元信息统一存放在 metadata 目录中。
+metadata_root = "/c20250502/wangyushen/Datasets/kitti/metadata/foundationssc/kitti360"
+# * 分别指定训练、验证和测试集的 pkl 文件；文件缺失时 Dataset 会回退到逐帧扫描。
 train_info_file = f"{metadata_root}/kitti360_infos_train.pkl"
 val_info_file = f"{metadata_root}/kitti360_infos_val.pkl"
 test_info_file = f"{metadata_root}/kitti360_infos_test.pkl"
@@ -164,7 +164,7 @@ test_pipeline = [
     ),
 ]
 
-#* 验证集使用 0006 序列及其独立的 val metadata。
+# * 验证集使用 0006 序列及其独立的 val metadata。
 valset_config = dict(
     type=dataset_type,
     data_root=data_root,
@@ -178,7 +178,7 @@ valset_config = dict(
     pc_range=point_cloud_range,
 )
 
-#* 测试集使用 0009 序列及其独立的 test metadata。
+# * 测试集使用 0009 序列及其独立的 test metadata。
 testset_config = dict(
     type=dataset_type,
     data_root=data_root,
@@ -192,7 +192,7 @@ testset_config = dict(
     pc_range=point_cloud_range,
 )
 
-#* 为三个阶段绑定各自的数据划分，避免验证阶段误用测试集配置。
+# * 为三个阶段绑定各自的数据划分，避免验证阶段误用测试集配置。
 data = dict(train=trainset_config, val=valset_config, test=testset_config)
 
 train_dataloader_config = dict(batch_size=1, num_workers=4)

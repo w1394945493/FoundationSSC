@@ -334,10 +334,10 @@ class DepthAnythingFeature(nn.Module):
         """
         @x: (B,C,H,W)
         """
-        h, w = x.shape[-2:]
+        h, w = x.shape[-2:] # (2 3 448 1344)
         features = self.depth_anything.pretrained.get_intermediate_layers(
             x, self.intermediate_layer_idx[self.encoder], return_class_token=True
-        )
+        )   # vit-l: [4 11 17 23] 
 
         patch_size = self.depth_anything.pretrained.patch_size
         patch_h, patch_w = h // patch_size, w // patch_size
@@ -348,13 +348,13 @@ class DepthAnythingFeature(nn.Module):
         )
 
         return {
-            "out": out,
-            "path_1": path_1,
-            "path_2": path_2,
-            "path_3": path_3,
-            "path_4": path_4,
+            "out": out,         # (2 128 448 1344)
+            "path_1": path_1,   # (2 256 256 768)
+            "path_2": path_2,   # (2 256 128 384)
+            "path_3": path_3,   # (2 256 64 192)
+            "path_4": path_4,   # (2 256 32 96)
             "features": features,
-            "disp": disp,
+            "disp": disp,       # (2 1 448 1344)
         }  # path_1 is 1/2; path_2 is 1/4
 
 
@@ -412,7 +412,7 @@ class Feature(nn.Module):
         divider = np.lcm(self.patch_size, 16)
         H_resize, W_resize = get_resize_keep_aspect_ratio(
             H, W, divider=divider, max_H=1344, max_W=1344
-        )
+        )   # 448 1344
         x_in_ = F.interpolate(
             x, size=(H_resize, W_resize), mode="bicubic", align_corners=False
         )

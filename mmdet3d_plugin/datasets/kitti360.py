@@ -51,7 +51,7 @@ class KITTI360Dataset(Dataset):
         if info_file is not None and os.path.isfile(info_file):
             #* pkl 内容是 create_kitti360_infos.py 生成的逐帧元信息列表。
             with open(info_file, "rb") as f:
-                self.data_infos = pickle.load(f)
+                self.data_infos = pickle.load(f)    # train:8483 test: 2165 val:1812
             #* 输出实际使用的索引文件和样本数，便于确认缓存已经生效。
             print(f"Loaded {len(self.data_infos)} KITTI-360 infos from {info_file}")
         else:

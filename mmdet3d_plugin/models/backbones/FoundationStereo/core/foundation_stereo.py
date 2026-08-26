@@ -347,8 +347,8 @@ class FoundationStereo(nn.Module):
         """Estimate disparity between pair of frames"""
         B = len(image1)
         low_memory = low_memory or (self.args.get("low_memory", False))
-        image1 = normalize_image(image1)
-        image2 = normalize_image(image2)
+        image1 = normalize_image(image1)    # (1 3 384 1408)
+        image2 = normalize_image(image2)    # (1 3 384 1408)
         with autocast(enabled=self.args.mixed_precision):
             # out, vit_feat = self.feature(torch.cat([image1, image2], dim=0))
             out, vit_feat, dinov2_feat = self.feature(
