@@ -68,15 +68,13 @@ def parse_args():
     )
     parser.add_argument(
         "--vis-gt",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="是否同时渲染真实占用标签；可用 --no-vis-gt 关闭",
+        action="store_true",
+        help="传入该参数时同时渲染真实占用标签，否则只渲染预测结果",
     )
     parser.add_argument(
         "--video-view",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="是否使用适合视频的横屏观察视角；可用 --no-video-view 关闭",
+        action="store_true",
+        help="传入该参数时使用适合视频的横屏观察视角，否则使用普通视角",
     )
     return parser.parse_args()
 
