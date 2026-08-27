@@ -102,3 +102,23 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/val \
       --log_every_n_steps 50 \
       --save_path /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred
+
+pip install vtk==9.0.1
+pip install pyvista
+# 可视化
+python tools/visualize.py \
+  --sequence 08 \
+  --data-root /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/sequences \
+  --ann-file /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/labels/08 \
+  --pred-seq /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/predictions \
+  --write-root /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/vis1 \
+  --vis-gt \
+  --video-view
+
+python tools/visualize.py \
+  --sequence 08 \
+  --data-root /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/sequences \
+  --ann-file /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/labels/08 \
+  --pred-seq /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/predictions \
+  --write-root /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/vis2 \
+  --vis-gt

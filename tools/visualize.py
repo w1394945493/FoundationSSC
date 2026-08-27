@@ -329,7 +329,7 @@ def process_voxel(
 if __name__ == "__main__":
     #* 从命令行读取序列和路径，避免在脚本中写死 SemanticKITTI 序列 08。
     args = parse_args()
-    pv.start_xvfb(wait=0.5)
+    # pv.start_xvfb(wait=0.5)
 
     sequence = args.sequence
     data_root = args.data_root
