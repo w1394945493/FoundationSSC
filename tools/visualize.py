@@ -1,3 +1,4 @@
+import argparse
 import os
 import numpy as np
 import pyvista as pv
@@ -35,6 +36,49 @@ colors = np.array(
         [255, 0, 0, 255],
     ]
 ).astype(np.uint8)
+
+
+def parse_args():
+    """解析待可视化序列及其数据路径。"""
+    parser = argparse.ArgumentParser(description="可视化 FoundationSSC 三维体素预测")
+    parser.add_argument(
+        "--sequence",
+        default="08",
+        help="序列编号或名称，例如 SemanticKITTI 的 08",
+    )
+    parser.add_argument(
+        "--data-root",
+        default="datasets/SemanticKITTI/dataset/sequences",
+        help="包含各序列目录的根路径，例如 SemanticKITTI/dataset/sequences",
+    )
+    parser.add_argument(
+        "--ann-file",
+        default="datasets/SemanticKITTI/dataset/labels/08",
+        help="当前序列的占用真值目录，例如 SemanticKITTI/dataset/labels/08",
+    )
+    parser.add_argument(
+        "--pred-seq",
+        default="pred/sequences/08/predictions",
+        help="当前序列的预测 .label 文件目录",
+    )
+    parser.add_argument(
+        "--write-root",
+        default=None,
+        help="可视化图片输出目录；默认将 pred-seq 的最后一级改为 visualizations",
+    )
+    parser.add_argument(
+        "--vis-gt",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="是否同时渲染真实占用标签；可用 --no-vis-gt 关闭",
+    )
+    parser.add_argument(
+        "--video-view",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="是否使用适合视频的横屏观察视角；可用 --no-video-view 关闭",
+    )
+    return parser.parse_args()
 
 
 def get_coords():
@@ -285,13 +329,14 @@ def process_voxel(
 
 
 if __name__ == "__main__":
+    #* 从命令行读取序列和路径，避免在脚本中写死 SemanticKITTI 序列 08。
+    args = parse_args()
     pv.start_xvfb(wait=0.5)
 
-    sequence = "08"
-    data_root = "datasets/SemanticKITTI/dataset/sequences"
-    ann_file = f"datasets/SemanticKITTI/dataset/labels/{sequence}"
-
-    pred_seq = f"pred/sequences/{sequence}/predictions"
+    sequence = args.sequence
+    data_root = args.data_root
+    ann_file = args.ann_file
+    pred_seq = args.pred_seq
 
     cam_param = {
         "img_size": (1220, 370),
@@ -300,7 +345,12 @@ if __name__ == "__main__":
     }
     vox_origin = np.array([0, -25.6, -2])
 
-    write_root = pred_seq.replace("predictions", "visualizations")
+    #* 未显式指定输出目录时，仅将预测路径最后一级改为 visualizations。
+    write_root = args.write_root
+    if write_root is None:
+        write_root = os.path.join(
+            os.path.dirname(os.path.normpath(pred_seq)), "visualizations"
+        )
 
     calib_file = os.path.join(data_root, sequence, "calib.txt")
     calib_all = {}
@@ -331,8 +381,8 @@ if __name__ == "__main__":
         lidar2cam=lidar2cam,
         fov_mask=fov_mask,
         save_name=save_name,
-        vis_gt=True,
-        video_view=True,
+        vis_gt=args.vis_gt,
+        video_view=args.video_view,
     )
     with multiprocessing.Pool(processes=16) as pool:
         _ = list(tqdm(pool.imap(worker_func, pred_voxels), total=len(pred_voxels)))
