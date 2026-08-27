@@ -170,7 +170,8 @@ testset_config = dict(
 
 data = dict(train=trainset_config, val=testset_config, test=testset_config)
 
-train_dataloader_config = dict(batch_size=1, num_workers=4)
+#! 单卡训练使用 batch_size=2，确保 ContextNet 的 BatchNorm1d 至少收到两个样本。
+train_dataloader_config = dict(batch_size=2, num_workers=4)
 
 test_dataloader_config = dict(batch_size=1, num_workers=4)
 

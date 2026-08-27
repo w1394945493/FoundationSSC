@@ -100,9 +100,10 @@ class FoundationSSC(BaseModule):
                 raw_left_imgs, raw_right_imgs, test_mode=True, iters=self.gru_iters
             )
 
-        # 左右图此前沿 batch 维一起送入 backbone；这里只截取前 N 个左图特征。
-        # 每层特征由空间特征 feat 和全局分类标记 cls_token 组成。
-        x = [(feat[:N, ...], cls_token[:N, ...]) for feat, cls_token in dinov2_feat]
+        #! 支持 B>1：左右图沿 batch 维拼接后，前 B*N 项才是全部左图特征。
+        # 原来的 feat[:N] 在 N=1、B>1 时只保留第一个样本，随后 view(B, N, ...) 会失败。
+        num_left_images = B * N
+        x = [(feat[:num_left_images, ...], cls_token[:num_left_images, ...],) for feat, cls_token in dinov2_feat]
 
         # SimpleFPN 将 DINOv2 特征构造成多尺度特征金字塔。
         x = self.img_pre_neck(x)
