@@ -123,7 +123,7 @@ class FoundationSSC(BaseModule):
     # 7 图像特征提取：生成立体、深度、视角变换及 VoxFormer 体素特征
     def extract_img_feat(self, img_inputs, img_metas):
         left_img_inputs = [
-            img_inputs[0][:, ::2],  # (1 1 3 384 1408)
+            img_inputs[0][:, ::2],  # kitti360: (1 1 3 384 1408) sem-kitti:(1 1 3 384 1280)
             img_inputs[1][:, ::2],  # (1 1 3 3)
             img_inputs[2][:, ::2],
             img_inputs[3][:, ::2],
@@ -139,17 +139,17 @@ class FoundationSSC(BaseModule):
         # img_metas["raw_img"] 同时包含配对的左、右原始 RGB 图像。
         img_enc_feats, disp_volume = self.foundation_encoder(
             left_img_inputs[0], img_metas["raw_img"]
-        )
+        )   # sem-kitti:(1 1 640 48 160)  2:(1 104 96 320) (1 1 384 1280)
 
         # img_enc_feats 供深度网络提取上下文；disp_volume 提供视差概率和视差图。
-        mlp_input = self.depth_net.get_mlp_input(*left_img_inputs[1:7])
+        mlp_input = self.depth_net.get_mlp_input(*left_img_inputs[1:7]) # (1 1 33)
         context, depth, stereo_depth = self.depth_net(
             [img_enc_feats] + left_img_inputs[1:7] + [mlp_input], img_metas, disp_volume
-        )
-        coarse_queries = self.img_view_transformer(context, depth, left_img_inputs[1:7])
-        proposal = self.proposal_layer(left_img_inputs[1:7], stereo_depth)
+        )   # (1 1 128 48 160) (1 112 48 160) (1 1 384 1280)
+        coarse_queries = self.img_view_transformer(context, depth, left_img_inputs[1:7]) # (1 128 128 128 16)
+        proposal = self.proposal_layer(left_img_inputs[1:7], stereo_depth)  # (1 1 128 128 16)
 
-        lss_volume = coarse_queries.clone()
+        lss_volume = coarse_queries.clone() # (1 128 128 128 16)
 
         x = self.VoxFormer_head(
             [context],
@@ -158,9 +158,9 @@ class FoundationSSC(BaseModule):
             lss_volume=lss_volume,
             img_metas=img_metas,
             mlvl_dpt_dists=[depth.unsqueeze(1)],
-        )
+        )   # (1 128 128 128 16)
 
-        x = self.dual_feature_fusion(coarse_queries, x)
+        x = self.dual_feature_fusion(coarse_queries, x) # (1 128 128 128 16)
 
         if len(context.shape) == 5:
             b, n, d, h, w = context.shape
@@ -233,8 +233,8 @@ class FoundationSSC(BaseModule):
         img_metas = data_dict["img_metas"]
         gt_occ = data_dict["gt_occ"]    # (1 256 256 32)
 
-        img_voxel_feats, context, depth = self.extract_img_feat(img_inputs, img_metas)
-        voxel_feats_enc = self.occ_encoder(img_voxel_feats)
+        img_voxel_feats, context, depth = self.extract_img_feat(img_inputs, img_metas) # (1 128 128 128 16)
+        voxel_feats_enc = self.occ_encoder(img_voxel_feats) # 2:(1 128 128 128 16) (1 128 64 64 8)
 
         if len(voxel_feats_enc) > 1:
             voxel_feats_enc = [voxel_feats_enc[0]]
@@ -250,8 +250,8 @@ class FoundationSSC(BaseModule):
             gt_occ=gt_occ,
         )
 
-        pred = output["output_voxels"]
-        pred = torch.argmax(pred, dim=1)
+        pred = output["output_voxels"]  # (1 20 256 256 32)
+        pred = torch.argmax(pred, dim=1) # (1 256 256 32)
 
         test_output = {"pred": pred, "gt_occ": gt_occ}
 

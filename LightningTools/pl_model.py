@@ -128,8 +128,8 @@ class pl_model(LightningBaseModel):
     def test_step(self, batch, batch_idx):
         output_dict = self.forward(batch)
 
-        pred = output_dict["pred"].detach().cpu().numpy()
-        gt_occ = output_dict.get("gt_occ", None)
+        pred = output_dict["pred"].detach().cpu().numpy() # (1 256 256 32)
+        gt_occ = output_dict.get("gt_occ", None) # (1 256 256 32)
         if gt_occ is not None:
             gt_occ = gt_occ.detach().cpu().numpy()
 

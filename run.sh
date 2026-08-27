@@ -87,7 +87,7 @@ CUDA_VISIBLE_DEVICES=0 \
 PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
 python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --eval \
-      --ckpt_path /c20250502/wangyushen/Weights/foundationssc/FoundationSSC-KITTI360.ckpt \
+      --ckpt_path /c20250502/wangyushen/Weights/foundationssc/FoundationSSC-SemanticKITTI.ckpt \
       --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-SemanticKITTI.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/val \
       --log_every_n_steps 50
