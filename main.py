@@ -68,8 +68,23 @@ if __name__ == "__main__":
     #     auto_insert_metric_name=False,  # 禁止 Lightning 自动给文件名字段添加指标名称
     #     filename="epoch={epoch:03d}-mIoU={val/mIoU:.5f}-IoU={val/IoU:.5f}",  # 文件名记录轮次和指标
     # )
-    
+
     if not config.eval:
+        #* 训练时优先使用命令行指定的 checkpoint；未指定时自动查找当前实验目录中的 last.ckpt。
+        resume_ckpt_path = config["ckpt_path"]
+        if resume_ckpt_path is None:
+            last_ckpt_path = os.path.join(tb_logger.log_dir, "checkpoints", "last.ckpt")
+            if os.path.isfile(last_ckpt_path):
+                resume_ckpt_path = last_ckpt_path
+                print(f"发现训练断点，将从以下位置继续训练：{resume_ckpt_path}")
+            else:
+                print(f"未发现训练断点，将从头开始训练：{last_ckpt_path}")
+        else:
+            #! 显式指定断点时提前检查路径，避免进入 Trainer 后才报告路径错误。
+            if not os.path.isfile(resume_ckpt_path):
+                raise FileNotFoundError(f"指定的训练断点不存在：{resume_ckpt_path}")
+            print(f"使用指定的训练断点继续训练：{resume_ckpt_path}")
+
         trainer = pl.Trainer(
             devices=[i for i in range(num_gpu)],
             strategy=DDPStrategy(accelerator="gpu", find_unused_parameters=True),
@@ -85,7 +100,11 @@ if __name__ == "__main__":
             log_every_n_steps=config["log_every_n_steps"],
             check_val_every_n_epoch=config["check_val_every_n_epoch"], #!
         )
-        trainer.fit(model=model, datamodule=data_dm)
+        trainer.fit(
+            model=model,
+            datamodule=data_dm,
+            ckpt_path=resume_ckpt_path,
+        )
     else:
         trainer = pl.Trainer(
             devices=[i for i in range(num_gpu)],
