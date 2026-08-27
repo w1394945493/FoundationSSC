@@ -1,5 +1,6 @@
 import os
 import glob
+import pickle  # 读取预生成的样本元信息
 import numpy as np
 from mmdet.datasets import DATASETS
 from torch.utils.data import Dataset
@@ -17,6 +18,7 @@ class SemanticKITTIDataset(Dataset):
         camera_used,
         occ_size,
         pc_range,
+        info_file=None,  # 可选的 metadata pkl 路径
         test_mode=False,
         load_continuous=False,
     ):
@@ -47,7 +49,22 @@ class SemanticKITTIDataset(Dataset):
         self.data_root = data_root
         self.ann_file = ann_file
         self.test_mode = test_mode
-        self.data_infos = self.load_annotations(self.ann_file)
+
+        #* 优先读取预生成的 pkl；没有配置或文件不存在时保留原来的逐帧扫描逻辑。
+        if info_file is not None and os.path.isfile(info_file):
+            with open(info_file, "rb") as f:
+                self.data_infos = pickle.load(f)
+            print(
+                f"Loaded {len(self.data_infos)} SemanticKITTI infos from {info_file}"
+            )
+        else:
+            if info_file is not None:
+                # 路径错误时明确提示正在回退，避免误以为 pkl 已经生效。
+                print(
+                    f"SemanticKITTI info file not found: {info_file}; "
+                    "scanning ann_file"
+                )
+            self.data_infos = self.load_annotations(self.ann_file)
 
         self.occ_size = occ_size
         self.pc_range = pc_range

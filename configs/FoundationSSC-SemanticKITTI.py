@@ -1,5 +1,12 @@
 data_root = "datasets/SemanticKITTI/dataset"
 ann_file = "datasets/SemanticKITTI/dataset/labels"
+#* SemanticKITTI 的预处理元信息目录；如存放在其他位置，只需修改这一行。
+metadata_root = f"{data_root}/metadata"
+train_info_file = f"{metadata_root}/semantic_kitti_infos_train.pkl"  # 00～07、09、10
+val_info_file = f"{metadata_root}/semantic_kitti_infos_val.pkl"  # 08
+test_submit_info_file = (  # 11～21，用于生成官方测试提交结果
+    f"{metadata_root}/semantic_kitti_infos_test_submit.pkl"
+)
 
 camera_used = ["left", "right"]
 
@@ -112,6 +119,7 @@ trainset_config = dict(
     type=dataset_type,
     data_root=data_root,
     ann_file=ann_file,
+    info_file=train_info_file,  # 优先读取训练集 metadata
     pipeline=train_pipeline,
     split="train",
     camera_used=camera_used,
@@ -157,18 +165,48 @@ test_pipeline = [
     ),
 ]
 
-testset_config = dict(
+#* 验证阶段使用序列 08，并读取 val.pkl。
+valset_config = dict(
     type=dataset_type,
     data_root=data_root,
     ann_file=ann_file,
+    info_file=val_info_file,
     pipeline=test_pipeline,
-    split="test", # test_submit
+    split="val",
     camera_used=camera_used,
     occ_size=occ_size,
     pc_range=point_cloud_range,
 )
 
-data = dict(train=trainset_config, val=testset_config, test=testset_config)
+#* 本地 test 同样使用序列 08，因此直接复用 val.pkl，不重复生成相同文件。
+testset_config = dict(
+    type=dataset_type,
+    data_root=data_root,
+    ann_file=ann_file,
+    info_file=val_info_file,
+    pipeline=test_pipeline,
+    split="test",
+    camera_used=camera_used,
+    occ_size=occ_size,
+    pc_range=point_cloud_range,
+)
+
+#* 官方提交集使用无公开标签的 11～21 序列及 test_submit.pkl。
+test_submitset_config = dict(
+    type=dataset_type,
+    data_root=data_root,
+    ann_file=ann_file,
+    info_file=test_submit_info_file,
+    pipeline=test_pipeline,
+    split="test_submit",
+    camera_used=camera_used,
+    occ_size=occ_size,
+    pc_range=point_cloud_range,
+    test_mode=True,
+)
+
+#* 默认训练、验证和本地评估分别使用 train、val、test 配置。
+data = dict(train=trainset_config, val=valset_config, test=testset_config)
 
 train_dataloader_config = dict(batch_size=1, num_workers=4)
 
