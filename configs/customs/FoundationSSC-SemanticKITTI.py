@@ -242,6 +242,7 @@ _num_points_self_ = 8
 
 model = dict(
     type="FoundationSSC",
+    
     img_backbone=dict(
         type="FoundationStereo",
         # ckpt_dir="ckpts/23-51-11/model_best_bp2.pth",
@@ -343,6 +344,7 @@ model = dict(
                 ),
             ),
         ),
+        
         self_transformer=dict(
             type="PerceptionTransformer_DFA3D",
             rotate_prev_bev=True,
@@ -382,6 +384,7 @@ model = dict(
                 ),
             ),
         ),
+        
         positional_encoding=dict(
             type="LearnedPositionalEncoding",
             num_feats=_pos_dim_,
@@ -396,6 +399,7 @@ model = dict(
         output_channel=128,
         norm_type="group",
     ),
+    
     occ_encoder_backbone=dict(
         type="CustomResNet3D",
         numC_input=128,
@@ -403,6 +407,7 @@ model = dict(
         num_channels=[128, 128, 128],
         stride=[1, 2, 2],
     ),
+    
     occ_encoder_neck=dict(
         type="GeneralizedLSSFPN",
         in_channels=[128, 128, 128],
