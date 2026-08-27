@@ -51,6 +51,7 @@ find -L "$SEM_DATA/lidarseg" \
 # *_1_2.npy	默认配置不直接读取	预处理脚本会顺便生成
 
 # 二. SSCBench-Kitti-360
+# 无需再处理
 
 #--------------------------------------------------#
 cd /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/packages/DFA3D
@@ -76,6 +77,7 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/kitti360/val \
       --log_every_n_steps 50
 
+#--------------------------------------------------#
 # 创建semantickitti数据集元数据文件pkl
 python tools/create_semantic_kitti_infos.py \
   --data-root /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset \
@@ -91,8 +93,8 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-SemanticKITTI.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/val \
       --log_every_n_steps 50
-
-# 评估并保存结果
+  
+# 评估同时保存结果
 CUDA_VISIBLE_DEVICES=0 \
 PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
 python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
@@ -103,9 +105,11 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --log_every_n_steps 50 \
       --save_path /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred
 
+#--------------------------------------------------#
+# 可视化: 两种视角--video-view
 pip install vtk==9.0.1
 pip install pyvista
-# 可视化
+
 python tools/visualize.py \
   --sequence 08 \
   --data-root /c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/sequences \
@@ -122,3 +126,13 @@ python tools/visualize.py \
   --pred-seq /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/predictions \
   --write-root /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/pred/sequences/08/vis2 \
   --vis-gt
+
+
+# sem-kitti 训练
+CUDA_VISIBLE_DEVICES=0 \
+PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
+python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
+      --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-SemanticKITTI.py \
+      --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/train \
+      --log_every_n_steps 50
+  

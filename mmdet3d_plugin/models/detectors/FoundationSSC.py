@@ -206,7 +206,7 @@ class FoundationSSC(BaseModule):
         if self.depth_loss and depth is not None:
             losses["loss_depth"] = self.depth_net.get_depth_loss(
                 img_metas["gt_depths"][:, 0:1, ...], depth
-            )
+            )  # gt_depth: (1 2 384 1280) 数据集中过程中，用当前帧 LiDAR 点云实时投影到相机图像上生成的稀疏深度图。
 
         if hasattr(self, "plugin_head") and self.use_semantic:
             losses["loss_seg_ce"] = self.plugin_head.loss(

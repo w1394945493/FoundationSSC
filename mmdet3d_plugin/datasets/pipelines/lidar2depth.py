@@ -17,6 +17,7 @@ class CreateDepthFromLiDAR(object):
         self.load_seg = load_seg
 
     def __call__(self, results):
+        # 1. 读取当前帧 LiDAR 点云
         if self.dataset == "kitti":
             img_filename = results["img_filename"][0]
             seq_id, _, filename = img_filename.split("/")[-3:]
@@ -64,6 +65,7 @@ class CreateDepthFromLiDAR(object):
         else:
             raise NotImplementedError
 
+        # 2. 将 LiDAR 点投影到相机图像
         imgs, rots, trans, intrins, post_rots, post_trans = results["img_inputs"][:6]
 
         # [num_point, num_img, 3] in format [u, v, d]
@@ -85,17 +87,18 @@ class CreateDepthFromLiDAR(object):
             & (projected_points[..., 2] > 0)
         )
 
+        # 3. 生成稀疏深度图
         gt_depths = []
         gt_semantics = []
         for img_index in range(imgs.shape[0]):
-            gt_depth = torch.zeros((img_h, img_w))
+            gt_depth = torch.zeros((img_h, img_w)) # 针对每个相机生成一张全零深度图
             projected_points_i = projected_points[:, img_index]
             valid_mask_i = valid_mask[:, img_index]
             valid_points_i = projected_points_i[valid_mask_i]
             # sort
             depth_order = torch.argsort(valid_points_i[:, 2], descending=True)
             valid_points_i = valid_points_i[depth_order]
-            # fill in
+            # fill in 将有效 LiDAR 点的深度写到对应像素：
             gt_depth[
                 valid_points_i[:, 1].round().long(), valid_points_i[:, 0].round().long()
             ] = valid_points_i[:, 2]

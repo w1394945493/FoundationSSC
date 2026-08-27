@@ -195,8 +195,7 @@ testset_config = dict(
 # * 为三个阶段绑定各自的数据划分，避免验证阶段误用测试集配置。
 data = dict(train=trainset_config, val=valset_config, test=testset_config)
 
-#! 单卡训练使用 batch_size=2，确保 ContextNet 的 BatchNorm1d 至少收到两个样本。
-train_dataloader_config = dict(batch_size=2, num_workers=4)
+train_dataloader_config = dict(batch_size=1, num_workers=4)
 test_dataloader_config = dict(batch_size=1, num_workers=4)
 
 # model
