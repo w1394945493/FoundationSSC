@@ -1,7 +1,7 @@
 data_root = "/c20250502/wangyushen/Datasets/kitti/semantickitti/dataset"
 ann_file = "/c20250502/wangyushen/Datasets/kitti/semantickitti/dataset/labels"
-# * SemanticKITTI 的预处理元信息目录；如存放在其他位置，只需修改这一行。
 
+# * SemanticKITTI 的预处理元信息目录；如存放在其他位置，只需修改这一行。
 metadata_root = f"/c20250502/wangyushen/Datasets/kitti/metadata/foundationssc/semantickitti"
 train_info_file = f"{metadata_root}/semantic_kitti_infos_train.pkl"  # 00～07、09、10
 val_info_file = f"{metadata_root}/semantic_kitti_infos_val.pkl"  # 08

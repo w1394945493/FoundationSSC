@@ -135,4 +135,12 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-SemanticKITTI.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/train \
       --log_every_n_steps 50
-  
+
+
+#=========================================================#
+# 火山训练
+# sem-kitti
+cd /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC
+. /root/miniconda3/bin/activate
+conda activate /vepfs-mlp2/c20250502/haoce/conda_env/wys_temp_2
+bash sh/train_foundationssc_semkitti.sh
