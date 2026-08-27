@@ -62,8 +62,8 @@ if __name__ == "__main__":
 
     checkpoint_callback_mIoU = ModelCheckpoint(  #* 每次验证后都保存一份历史模型
         monitor="val/mIoU",  # 同样监控验证集平均 IoU
-        save_last=False,  # 不重复保存 last.ckpt，由上面的回调负责
-        save_top_k=-1,  # -1 表示保留每一次验证产生的 checkpoint
+        save_last=False,    # 不重复保存 last.ckpt，由上面的回调负责
+        save_top_k=-1,      # -1 表示保留每一次验证产生的 checkpoint
         auto_insert_metric_name=False,  # 禁止 Lightning 自动给文件名字段添加指标名称
         filename="epoch={epoch:03d}-mIoU={val/mIoU:.5f}-IoU={val/IoU:.5f}",  # 文件名记录轮次和指标
     )

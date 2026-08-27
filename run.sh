@@ -66,7 +66,7 @@ python tools/create_kitti360_infos.py \
   --output-dir /c20250502/wangyushen/Datasets/kitti/metadata/foundationssc/kitti360
 
 #--------------------------------------------------#
-# 评估
+# kitti360评估
 CUDA_VISIBLE_DEVICES=0 \
 PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
 python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
@@ -74,4 +74,14 @@ python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
       --ckpt_path /c20250502/wangyushen/Weights/foundationssc/FoundationSSC-KITTI360.ckpt \
       --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-KITTI360.py \
       --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/kitti360/val \
+      --log_every_n_steps 50
+
+# semantickitti评估
+CUDA_VISIBLE_DEVICES=0 \
+PYTHONPATH="$(pwd):$(pwd)/packages/DFA3D:$(pwd)/packages/bev_pool:${PYTHONPATH:-}" \
+python /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/main.py \
+      --eval \
+      --ckpt_path /c20250502/wangyushen/Weights/foundationssc/FoundationSSC-KITTI360.ckpt \
+      --config_path /vepfs-mlp2/c20250502/haoce/wangyushen/FoundationSSC/configs/customs/FoundationSSC-SemanticKITTI.py \
+      --log_folder /vepfs-mlp2/c20250502/haoce/wangyushen/Outputs/foundationssc/semantickitti/val \
       --log_every_n_steps 50
